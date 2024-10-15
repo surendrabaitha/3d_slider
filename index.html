@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3d Slider</title>
+    <style>
+        * {
+				margin: 0;
+				padding: 0;
+				border: none;
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				-khtml-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+				-webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+			}
+
+			body {
+				margin: 0;
+				overflow: hidden;
+			}
+
+			.img {
+				position: absolute;
+				background-size: contain;
+				background-repeat: no-repeat;
+        width: 100%;
+			}
+
+			#banner {
+				display: block;
+				position: relative;
+				/* overflow: hidden; */
+				margin: auto;
+				width: 320px;
+				height: 320px;
+				/* border: 1px solid #ccc; */
+				cursor: pointer;
+				/* overflow: hidden; */
+				/* background-color: transparent; */
+				opacity: 0;
+				box-sizing: border-box;
+     
+			}
+
+			#overlay-cta {
+				z-index: 999;
+				right: 0px;
+				left: 0px;
+				margin: 0px auto;
+				width: fit-content;
+				top: 260px;
+				color: #ffffff;
+				font-family: Arial, Helvetica, sans-serif;
+				padding: 10px 20px;
+				/* background-color: #e60000; */
+				border-radius: 10px;
+				/* box-shadow: 1px 6px 10px 0px rgba(0, 0, 0, 0.75); */
+				/* -webkit-box-shadow: 1px 6px 10px 0px rgba(0, 0, 0, 0.75); */
+				/* -moz-box-shadow: 1px 6px 10px 0px rgba(0, 0, 0, 0.75); */
+       
+			}
+
+
+
+			#gesture {
+				z-index: 999;
+				right: 0px;
+				left: 0px;
+				top: 280px;
+				margin: 0px auto;
+				pointer-events: none;
+			}
+
+			#cube_container {
+				height: 100%;
+				width: 100%;
+				box-sizing: border-box;
+			}
+
+			.side {
+				height: 100%;
+				width: 100%;
+				position: absolute;
+				background-size: contain;
+				background-repeat: no-repeat;
+      
+			}
+      
+    </style>
+</head>
+<body>
+
+
+		<div id="banner" style="margin-top: 100px;">
+			<img id="gesture" class="img" src="assets/images/hand.png" style="width: 90px !important;" alt="" />
+
+			<div id="overlay-cta" class="img">
+        <!-- <img id="hand"  src="assets/images/hand.png"
+        width="80px" alt=""> -->
+      </div>
+
+			<div id="cube_container"></div>
+		</div>
+
+    
+
+    
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+          <!-- <script src="https://unpkg.com/gsap@3/dist/CSSRulePlugin.min.js"></script> -->
+          <!-- <script src="https://assets.codepen.io/16327/CustomBounce3.min.js"></script> -->
+           <script src="assets/CustomBounce3.min.js"></script>
+     
+          <!-- <script src="https://assets.codepen.io/16327/CustomWiggle3.min.js"></script> -->
+          <!-- <script src="https://assets.codepen.io/16327/DrawSVGPlugin3.min.js"></script> -->
+          <!-- <script src="https://unpkg.com/gsap@3/dist/Draggable.min.js"></script> -->
+          <script src="assets/Draggable.min.js"></script>
+
+          <!-- <script src="https://unpkg.com/gsap@3/dist/EaselPlugin.min.js"></script> -->
+           <script src="assets/EaselPlugin.min.js"></script>
+
+          <!-- <script src="https://unpkg.com/gsap@3/dist/EasePack.min.js"></script> -->
+           <script src="assets/EasePack.min.js"></script>
+
+          <!-- <script src="https://assets.codepen.io/16327/Flip.min.js"></script> -->
+
+          <script src="assets/Flip.min.js"></script>
+        
+          <!-- <script src="https://assets.codepen.io/16327/SplitText3.min.js"></script> -->
+           <script src="assets/SplitText3.min.js"></script>
+
+
+          <!-- <script src="https://unpkg.com/gsap@3/dist/TextPlugin.min.js"></script> -->
+           <script src="assets/TextPlugin.min.js"></script>
+           
+          <!-- <script src="https://assets.codepen.io/16327/ScrollSmoother.min.js"></script> -->
+           <script src="assets/ScrollSmoother.min.js"></script>
+      
+              
+       
+          
+            
+          
+          
+        
+        <script>
+    window.addEventListener("load", function (event) {
+
+var side_amount = 4
+var sides_array = [];
+var width = 320; // width of the banner || Examples: 320 300
+var max_swipe_value = 80; // max swipe value for the banner to automatic go to next image 
+var min_swipe_value = 10; // min swipe value for the user to swipe, before going to next image
+var file_extension = "png"; // file extensions of the images || Examples: jpg png gif
+var swipe_speed = 0.5; // how fast the swiping/dragging will go || Default 0.5
+
+var sides;
+var size = width / 2;
+var current_item = 0;
+var current_side = 1;
+var drag_rotation = 0;
+var is_ready = true;
+let bannerClicked = false;
+
+const handRotationTimeline = gsap.timeline({ repeat: 5 });
+const cubeRotationTimeline = gsap.timeline({ repeat: 5, delay: 1, repeatDelay: 2 });
+
+    setup();
+
+function setup() {
+    TweenMax.set("#banner", { alpha: 1, perspective: 500 });
+    createImageArray(side_amount);
+    createStartImages(1, sides_array[0], file_extension);
+    createStartImages(2, sides_array[1], file_extension);
+    createStartImages(3, sides_array.findLast((element) => element), file_extension);
+    change_done();
+    previewCubeStart();
+}
+
+document.getElementById("banner").onpointerdown = function () {
+    handRotationTimeline.kill();
+    cubeRotationTimeline.kill();
+
+    if (!bannerClicked) {
+        bannerClicked = true;
+        gsap.to("#cube_container", { rotationY: 0, ease: "power2.inOut" })
+        gsap.to(gesture, { alpha: 0, ease: "power2.inOut" })
+    }
+};
+
+function createImageArray(amount) {
+    for (let i = 1; i < amount + 1; i++) {
+        sides_array.push("image" + i);
+    }
+
+    sides = sides_array.length
+}
+
+function createStartImages(sideId, image, file_extension) {
+    var cubeContainer = document.getElementById("cube_container");
+
+    var sideElement = document.createElement("div");
+    sideElement.id = "side" + sideId;
+    sideElement.className = "side prev";
+
+    var imgElement = document.createElement("img");
+    imgElement.src = "assets/images/1.jpg?text=" + image;
+    imgElement.id = "image" + sideId;
+    imgElement.className = "img";
+
+    var overlayElement = document.createElement("img");
+    // overlayElement.src = "assets/images/TEST.png"+ image + "&bgColor=rgba(255,255,255,0)&textColor=rgba(0,0,0,1)&fontSize=20";
+
+    overlayElement.src = "assets/images/TEST.png";
+
+    overlayElement.id = "overlay" + sideId;
+    overlayElement.className = "img overlay";
+
+    sideElement.appendChild(imgElement);
+    sideElement.appendChild(overlayElement);
+
+    cubeContainer.appendChild(sideElement);
+}
+
+function previewCubeStart() {
+    handRotationTimeline
+        .from(gesture, { duration: 1, alpha: 0 })
+        .to(gesture, { duration: 1, x: -110, ease: "power2.inOut" })
+        .to(gesture, { duration: 2, x: 110, ease: "power2.inOut" })
+        .to(gesture, { duration: 1, x: 0, ease: "power2.inOut" })
+        .from(gesture, { duration: 1, alpha: 1 })
+        ;
+
+    cubeRotationTimeline
+        .to("#cube_container", { duration: 1, rotationY: -45, ease: "power2.inOut" }, "start")
+        .to("#cube_container", { duration: 2, rotationY: 45, ease: "power2.inOut" }, "start+=1")
+        .to("#cube_container", { duration: 1, rotationY: 0, ease: "power2.inOut" }, "start+=3")
+
+        .to("#overlay1", { duration: 1, x: -45, ease: "power2.inOut" }, "start")
+        .to("#overlay1", { duration: 2, x: 45, ease: "power2.inOut" }, "start+=1")
+        .to("#overlay1", { duration: 1, x: 0, ease: "power2.inOut" }, "start+=3")
+        ;
+}
+
+function removeClasses(className) {
+    var elements = document.querySelectorAll('.' + className);
+    elements.forEach(function (element) {
+        element.classList.remove(className);
+    });
+}
+
+function addClasses(elementId, className) {
+    var element = document.getElementById(elementId);
+    if (element) {
+        element.classList.add(className);
+    }
+}
+
+function next(is_drag) {
+    is_ready = false;
+    current_item++;
+    current_side++;
+    if (is_drag) {
+        TweenMax.to("#cube_container", 0.5, { rotationY: "-=" + (90 + drag_rotation), onComplete: change_done });
+    } else {
+        TweenMax.to("#cube_container", 0.5, { rotationY: "-=" + 90, onComplete: change_done });
+    }
+}
+
+function prev(is_drag) {
+    is_ready = false;
+    current_item--;
+    current_side--;
+    if (is_drag) {
+        TweenMax.to("#cube_container", 0.5, { rotationY: "+=" + (90 - drag_rotation), onComplete: change_done });
+    } else {
+        TweenMax.to("#cube_container", 0.5, { rotationY: "+=" + 90, onComplete: change_done });
+    }
+}
+
+function check_item(val) {
+    if (val < 0) {
+        val = (sides - 1);
+    } else if (val > (sides - 1)) {
+        val = 0;
+    }
+    return val;
+}
+
+function check_side(val) {
+    if (val < 1) {
+        val = 3;
+    } else if (val > 3) {
+        val = 1;
+    }
+    return val;
+}
+
+function change_done() {
+    current_item = check_item(current_item);
+    var n = check_item(current_item + 1);
+    var p = check_item(current_item - 1);
+
+    current_side = check_side(current_side);
+    var f1 = current_side;
+    var n1 = check_side(current_side + 1);
+    var p1 = check_side(current_side - 1);
+
+    removeClasses('front');
+    removeClasses('next');
+    removeClasses('prev');
+    addClasses('side' + f1, 'front');
+    addClasses('side' + n1, 'next');
+    addClasses('side' + p1, 'prev');
+
+    var img_n = sides_array[n];
+    var img_p = sides_array[p];
+    document.getElementById('image' + n1).setAttribute('src', "assets/images/2.jpg?text=" + img_n);
+    document.getElementById('image' + p1).setAttribute('src', "assets/images/3.jpg?text=" + img_p);
+
+    // document.getElementById('overlay' + n1).setAttribute('src', "assets/images/TEST.png"+ img_n + "&bgColor=rgba(255,255,255,0)&textColor=rgba(0,0,0,1)&fontSize=20");
+    // document.getElementById('overlay' + p1).setAttribute('src', "assets/images/TEST.png"+ img_p + "&bgColor=rgba(255,255,255,0)&textColor=rgba(0,0,0,1)&fontSize=20");
+
+    document.getElementById('overlay' + n1).setAttribute('src', "assets/images/TEST.png");
+    document.getElementById('overlay' + p1).setAttribute('src', "assets/images/TEST.png");
+
+
+    TweenMax.set(["#cube_container", ".next", ".prev"], { clearProps: "all" });
+    TweenMax.set("#cube_container", { transformStyle: "preserve-3d", z: -size });
+    TweenMax.set(".front", { z: size - 1, rotationY: 0, x: 0 });
+    TweenMax.set(".next", { rotationY: 90, x: size - 2 });
+    TweenMax.set(".prev", { rotationY: -90, x: -size + 2 });
+
+    Draggable.create("#side" + f1, {
+        type: 'x',
+
+        zIndexBoost: false,
+        onClick: function () {
+            window.open(clickTAGvalue, landingpagetarget);
+        },
+        onDrag: function () {
+            let nextNode = this.target.parentNode.querySelectorAll(".next")[0].childNodes[1];
+            let prevNode = this.target.parentNode.querySelectorAll(".prev")[0].childNodes[1];
+            if (is_ready) {
+                drag_rotation = Math.round(this.endX / 2 * swipe_speed);
+                TweenMax.set(this.target, { x: 0 });
+                TweenMax.set("#cube_container", { rotationY: drag_rotation });
+                TweenMax.to(this.target.childNodes[1], { duration: 0.5, rotationY: drag_rotation, x: drag_rotation });
+                TweenMax.to(nextNode, { duration: 0.5, x: drag_rotation });
+                TweenMax.to(prevNode, { duration: 0.5, x: drag_rotation });
+                if (drag_rotation >= max_swipe_value) {
+                    Draggable.get("#side" + f1).kill();
+                } else if (drag_rotation <= -max_swipe_value) {
+                    Draggable.get("#side" + f1).kill();
+                }
+            }
+        },
+        onDragEnd: function () {
+            let nextNode = this.target.parentNode.querySelectorAll(".next")[0].childNodes[1];
+            let prevNode = this.target.parentNode.querySelectorAll(".prev")[0].childNodes[1];
+            if (is_ready) {
+                if (drag_rotation >= min_swipe_value) {
+                    TweenMax.to(this.target.childNodes[1], { duration: 0.5, rotationY: 0, x: 0 });
+                    TweenMax.to(nextNode, { duration: 0.5, rotationY: 0, x: 0 });
+                    TweenMax.to(prevNode, { duration: 0.5, rotationY: 0, x: 0 });
+                    Draggable.get("#side" + f1).kill();
+                    prev(1, drag_rotation);
+                } else if (drag_rotation <= -min_swipe_value) {
+                    TweenMax.to(this.target.childNodes[1], { duration: 0.5, rotationY: 0, x: 0 });
+                    TweenMax.to(nextNode, { duration: 0.5, rotationY: 0, x: 0 });
+                    TweenMax.to(prevNode, { duration: 0.5, rotationY: 0, x: 0 });
+                    Draggable.get("#side" + f1).kill();
+                    next(1, drag_rotation);
+                } else {
+                    TweenMax.to(this.target.childNodes[1], { duration: 0.5, rotationY: 0, x: 0 });
+                    TweenMax.to(nextNode, { duration: 0.5, rotationY: 0, x: 0 });
+                    TweenMax.to(prevNode, { duration: 0.5, rotationY: 0, x: 0 });
+                    TweenMax.to("#cube_container", 0.2, { rotationY: 0 });
+                }
+            }
+        }
+    });
+    is_ready = true;
+}
+});
+
+        </script>
+</body>
+</html>
